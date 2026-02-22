@@ -29,6 +29,9 @@ if 'app_data' not in st.session_state:
         'mailchimp_intro': ''
     }
 
+if 'ingestion_error' not in st.session_state:
+    st.session_state.ingestion_error = None
+
 # --- Sidebar Configuration ---
 st.sidebar.title("App Configuration")
 api_key = st.secrets.get("GEMINI_API_KEY", None)
@@ -105,9 +108,7 @@ elif active_tab == tabs[1]:
                             })
                     except Exception as e:
                         import traceback
-                        st.error(f"🚨 AI Analysis Failed for {uploaded_file.name}: {str(e)}")
-                        with st.expander("View Detailed Error Log"):
-                            st.code(traceback.format_exc(), language="text")
+                        st.session_state.ingestion_error = f"🚨 Analysis Failed for {uploaded_file.name}: {str(e)}\n\nTraceback: {traceback.format_exc()}"
                     finally:
                         if os.path.exists(temp_path): os.remove(temp_path)
                         
@@ -116,6 +117,14 @@ elif active_tab == tabs[1]:
 
     with col2:
         st.subheader("Data Editor")
+        
+        # Display pinned error if exists
+        if st.session_state.ingestion_error:
+            st.error(st.session_state.ingestion_error)
+            if st.button("Dismiss Error"):
+                st.session_state.ingestion_error = None
+                st.rerun()
+                
         if st.session_state.app_data['tracks']:
             df = pd.DataFrame(st.session_state.app_data['tracks'])
             edited_df = st.data_editor(df, use_container_width=True, key="editor_tab1", num_rows="dynamic")
