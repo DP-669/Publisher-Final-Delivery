@@ -71,11 +71,11 @@ class PromptEngine:
         2. Write a punchy, utility-driven Track Description of exactly 2 to 3 sentences. Do not write dialogue or conversational text. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
         3. Sentence 1 must establish the genre vibe and list the core instrumentation (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
         4. Sentence 2/3 must establish the emotional impact and specifically list 2 to 3 editorial use-cases (e.g., 'perfect for high-stakes action or edgy brand content.').
-        5. CRITICAL: DO NOT use flowery AI vocabulary such as 'exudes', 'sonic backdrop', 'tapestry', 'delves', or 'seamless'. Write like a gritty, straight-to-the-point music supervisor.
+        5. CRITICAL WRITING STYLE: Write for extreme 'glanceability'. Limit yourself to a maximum of ONE strong adjective per noun. Rely on concrete musical terms and strong action verbs rather than emotional fluff. The editor must understand the track's utility in a 2-second scan.
         
-        FEW-SHOT EXAMPLES:
-        Example 1: "An infectious, adrenaline-fueled stomp-and-clap anthem defined by propulsive acoustic guitars, rowdy 'Hey!' vocal shouts, and a driving rhythm section. This is a relentless engine of positivity and forward momentum, designed to instantly lift the energy of any visual montage."
-        Example 2: "A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats. Featuring distorted guitars, punchy drums, and attitude-packed vocal ad-libs, this track oozes confidence and 'badass' energy, perfect for high-stakes action or edgy brand content."
+        FEW-SHOT CONTRAST EXAMPLES (DO THIS / NOT THAT):
+        BAD EXAMPLE (Too much fluff): "A hard-hitting, aggressive electronic beat built on punchy drum grooves, booming sub-bass, and dark synth motifs. This track establishes a tense, adrenaline-fueled atmosphere that drives relentless forward momentum, perfect for gritty action promos."
+        GOOD EXAMPLE (Glanceable & Punchy): "Aggressive electronic beat driven by sub-bass and dark synth motifs. Builds immediate tension, designed specifically for action promos, racing highlights, and streetwear campaigns."
         
         Required JSON Structure:
         {{
