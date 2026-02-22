@@ -26,7 +26,12 @@ if 'app_data' not in st.session_state:
 
 # --- Sidebar Configuration ---
 st.sidebar.title("App Configuration")
-api_key = st.sidebar.text_input("Gemini API Key", type="password")
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+except KeyError:
+    st.error("Missing GEMINI_API_KEY in Streamlit Secrets. Please configure your secrets to continue.")
+    st.stop()
+    
 catalog = st.sidebar.selectbox("Active Catalog Persona", ["redCola", "SSC", "EPP"])
 
 st.sidebar.markdown("---")
@@ -78,7 +83,7 @@ elif active_tab == tabs[1]:
     with col1:
         st.subheader("Action Zone: Ingestion")
         uploaded_files = st.file_uploader("Upload Master Audio", type=['mp3', 'wav'], accept_multiple_files=True)
-        if st.button("Run AI Analysis", disabled=not api_key or not uploaded_files):
+        if st.button("Run AI Analysis", disabled=not uploaded_files):
             with st.spinner("Analyzing audio..."):
                 for uploaded_file in uploaded_files:
                     temp_path = f"temp_{uploaded_file.name}"
@@ -122,7 +127,7 @@ elif active_tab == tabs[2]:
         st.warning("Please ingest tracks in Tab 01 first.")
     else:
         st.subheader("Action Zone: Generate 3-Sentence Arcs")
-        if st.button("Generate Descriptions", disabled=not api_key):
+        if st.button("Generate Descriptions"):
              with st.spinner("Council Auditing Descriptions..."):
                  updated = []
                  for track in st.session_state.app_data['tracks']:
@@ -159,7 +164,7 @@ elif active_tab == tabs[3]:
     
     with col1:
         st.subheader("Action Zone: Macro Summary")
-        if st.button("Synthesize Album Description", disabled=not api_key):
+        if st.button("Synthesize Album Description"):
             with st.spinner("Synthesizing..."):
                 descs = [t.get('Track Description', '') for t in st.session_state.app_data['tracks']]
                 sys_instr, prompt = st.session_state.engine.prompts.generate_album_description_prompt(descs, catalog)
@@ -183,7 +188,7 @@ elif active_tab == tabs[4]:
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Action Zone: Verbose Sampling")
-        if st.button("Brainstorm Names", disabled=not api_key):
+        if st.button("Brainstorm Names"):
              with st.spinner("Generating 5 concepts..."):
                  sys_instr, prompt = st.session_state.engine.prompts.generate_album_name_prompt(st.session_state.app_data['album_description'], catalog)
                  res = st.session_state.engine.call_gemini('gemini-1.5-flash', sys_instr, prompt, api_key)
@@ -205,7 +210,7 @@ elif active_tab == tabs[5]:
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Action Zone: Visual Prompts")
-        if st.button("Generate MidJourney Prompts", disabled=not api_key):
+        if st.button("Generate MidJourney Prompts"):
              with st.spinner("Generating prompts..."):
                  # Get References
                  refs = []
@@ -243,7 +248,7 @@ elif active_tab == tabs[6]:
     col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Action Zone: Marketing Memo")
-        if st.button("Generate MailChimp Memo", disabled=not api_key):
+        if st.button("Generate MailChimp Memo"):
              with st.spinner("Writing copy..."):
                  sys_instr, prompt = st.session_state.engine.prompts.generate_mailchimp_intro_prompt(
                      st.session_state.app_data['album_name'],

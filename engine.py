@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Tuple
 from prompts import PromptEngine
 
-DEFAULT_ROOT_PATH = Path("/Users/damirprice/Library/CloudStorage/GoogleDrive-luminapub67@gmail.com/My Drive/PUBLISHING_ASSETS_MASTER")
+DEFAULT_ROOT_PATH = Path(".")
 
 class IngestionEngine:
     """Core engine for handling data ingestion and processing via Local File System."""
