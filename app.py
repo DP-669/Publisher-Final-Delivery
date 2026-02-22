@@ -14,6 +14,11 @@ st.set_page_config(page_title="Publisher Final Delivery", layout="wide")
 if 'engine' not in st.session_state:
     st.session_state.engine = IngestionEngine()
 
+# Safe Path Resolution
+for required_path in ["01_VISUAL_REFERENCES", "02_VOICE_GUIDES", "02_VOICE_GUIDES/Council_Personas.json"]:
+    if not os.path.exists(required_path):
+        st.error(f"Critical Dependency Missing: `{required_path}` was not found on the server. Please check your deployment structure.")
+
 # Initialize Central App Data
 if 'app_data' not in st.session_state:
     st.session_state.app_data = {
@@ -26,11 +31,9 @@ if 'app_data' not in st.session_state:
 
 # --- Sidebar Configuration ---
 st.sidebar.title("App Configuration")
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except KeyError:
-    st.error("Missing GEMINI_API_KEY in Streamlit Secrets. Please configure your secrets to continue.")
-    st.stop()
+api_key = st.secrets.get("GEMINI_API_KEY", None)
+if not api_key:
+    st.warning("Missing GEMINI_API_KEY in Streamlit Secrets. Please configure your secrets. AI features will be disabled.")
     
 catalog = st.sidebar.selectbox("Active Catalog Persona", ["redCola", "SSC", "EPP"])
 
