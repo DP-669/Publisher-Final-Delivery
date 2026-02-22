@@ -125,7 +125,7 @@ class IngestionEngine:
     def analyze_audio_file(self, file_path: str, catalog: str, api_key: str) -> Optional[Dict]:
         """Analyzes an audio file using Gemini to extract metadata."""
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-3.1-pro-preview')
         
         audio_file = genai.upload_file(path=file_path)
         while audio_file.state.name == "PROCESSING":
