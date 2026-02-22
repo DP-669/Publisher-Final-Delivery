@@ -68,16 +68,21 @@ class PromptEngine:
         
         STRICT RULES:
         1. CRITICAL: Do not invent, hallucinate, or generate original titles. The title must be an exact extraction from the raw filename provided ({filename}), stripping only track numbers and extensions (e.g., "01 " and ".mp3").
-        2. Synthesize the description analysis into a single, cohesive, and punchy paragraph of exactly 3 sentences.
-        3. Do not write dialogue or conversational text in the description.
-        4. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
+        2. Write a punchy, utility-driven Track Description of exactly 2 to 3 sentences. Do not write dialogue or conversational text. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
+        3. Sentence 1 must establish the genre vibe and list the core instrumentation (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
+        4. Sentence 2/3 must establish the emotional impact and specifically list 2 to 3 editorial use-cases (e.g., 'perfect for high-stakes action or edgy brand content.').
+        5. CRITICAL: DO NOT use flowery AI vocabulary such as 'exudes', 'sonic backdrop', 'tapestry', 'delves', or 'seamless'. Write like a gritty, straight-to-the-point music supervisor.
+        
+        FEW-SHOT EXAMPLES:
+        Example 1: "An infectious, adrenaline-fueled stomp-and-clap anthem defined by propulsive acoustic guitars, rowdy 'Hey!' vocal shouts, and a driving rhythm section. This is a relentless engine of positivity and forward momentum, designed to instantly lift the energy of any visual montage."
+        Example 2: "A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats. Featuring distorted guitars, punchy drums, and attitude-packed vocal ad-libs, this track oozes confidence and 'badass' energy, perfect for high-stakes action or edgy brand content."
         
         Required JSON Structure:
         {{
             "Title": "Exact extraction from the filename provided",
             "Composer": "", 
             "Keywords": "Exactly 15 to 20 comma-separated keywords (mood, genre, instrumentation, editorial use). Keep all phrases to 3 words maximum.",
-            "Description": "A single, cohesive, punchy paragraph of exactly 3 sentences describing the track's narrative and utility."
+            "Description": "A punchy, utility-driven paragraph of exactly 2 to 3 sentences matching the tone of the examples."
         }}
         Note: Leave 'Composer' blank.
         """
