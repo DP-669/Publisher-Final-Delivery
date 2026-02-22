@@ -124,33 +124,30 @@ class IngestionEngine:
 
     def analyze_audio_file(self, file_path: str, catalog: str, api_key: str) -> Optional[Dict]:
         """Analyzes an audio file using Gemini to extract metadata."""
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-pro')
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-pro')
+        
+        audio_file = genai.upload_file(path=file_path)
+        while audio_file.state.name == "PROCESSING":
+            time.sleep(1)
+            audio_file = genai.get_file(audio_file.name)
             
-            audio_file = genai.upload_file(path=file_path)
-            while audio_file.state.name == "PROCESSING":
-                time.sleep(1)
-                audio_file = genai.get_file(audio_file.name)
-                
-            if audio_file.state.name == "FAILED": return None
-                
-            analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog)
-            response = model.generate_content([analysis_prompt, audio_file])
-            genai.delete_file(audio_file.name)
+        if audio_file.state.name == "FAILED": 
+            raise RuntimeError(f"Gemini File Upload Failed for {file_path}")
             
-            text = response.text.strip()
-            if text.startswith("```json"): text = text[7:]
-            if text.endswith("```"): text = text[:-3]
+        analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog)
+        response = model.generate_content([analysis_prompt, audio_file])
+        genai.delete_file(audio_file.name)
+        
+        text = response.text.strip()
+        if text.startswith("```json"): text = text[7:]
+        if text.endswith("```"): text = text[:-3]
+        
+        metadata = json.loads(text.strip())
+        if "Keywords" in metadata and metadata["Keywords"]:
+            metadata["Keywords"] = self.process_keywords(metadata["Keywords"], catalog, api_key)
             
-            metadata = json.loads(text.strip())
-            if "Keywords" in metadata and metadata["Keywords"]:
-                metadata["Keywords"] = self.process_keywords(metadata["Keywords"], catalog, api_key)
-                
-            return metadata
-        except Exception as e:
-            print(f"Error analyzing audio: {e}")
-            return None
+        return metadata
 
     def call_gemini(self, model_name: str, system_instr: str, prompt: str, api_key: str) -> str:
         """Helper to invoke Gemini."""

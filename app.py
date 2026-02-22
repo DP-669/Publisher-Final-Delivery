@@ -90,16 +90,24 @@ elif active_tab == tabs[1]:
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
                     
-                    metadata = st.session_state.engine.analyze_audio_file(temp_path, catalog, api_key)
-                    if os.path.exists(temp_path): os.remove(temp_path)
-                    
-                    if metadata:
-                        clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -')
-                        st.session_state.app_data['tracks'].append({
-                            'Title': metadata.get("Title", clean_name),
-                            'Keywords': metadata.get("Keywords", ""),
-                            'Track Description': metadata.get("Description", "")
-                        })
+                    try:
+                        metadata = st.session_state.engine.analyze_audio_file(temp_path, catalog, api_key)
+                        
+                        if metadata:
+                            clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -')
+                            st.session_state.app_data['tracks'].append({
+                                'Title': metadata.get("Title", clean_name),
+                                'Keywords': metadata.get("Keywords", ""),
+                                'Track Description': metadata.get("Description", "")
+                            })
+                    except Exception as e:
+                        import traceback
+                        st.error(f"🚨 AI Analysis Failed for {uploaded_file.name}: {str(e)}")
+                        with st.expander("View Detailed Error Log"):
+                            st.code(traceback.format_exc(), language="text")
+                    finally:
+                        if os.path.exists(temp_path): os.remove(temp_path)
+                        
                 st.success("Analysis Complete!")
                 st.rerun()
 
