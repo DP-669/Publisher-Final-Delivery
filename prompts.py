@@ -51,7 +51,7 @@ class PromptEngine:
         }
 
     # --- TAB 01 Prompts ---
-    def generate_keywords_analysis_prompt(self, catalog: str) -> str:
+    def generate_keywords_analysis_prompt(self, catalog: str, filename: str = "Unknown Track") -> str:
         """
         Generates the system instruction for audio analysis (Keywords/Ingestion).
         Consults Music Supervisor and Lead Video Editor.
@@ -66,12 +66,18 @@ class PromptEngine:
         
         Analyze the provided audio track for the {catalog} catalog. Provide a highly detailed, human-like analysis in JSON format.
         
+        STRICT RULES:
+        1. CRITICAL: Do not invent, hallucinate, or generate original titles. The title must be an exact extraction from the raw filename provided ({filename}), stripping only track numbers and extensions (e.g., "01 " and ".mp3").
+        2. Synthesize the description analysis into a single, cohesive, and punchy paragraph of exactly 3 sentences.
+        3. Do not write dialogue or conversational text in the description.
+        4. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
+        
         Required JSON Structure:
         {{
-            "Title": "A creative, evocative title for the track",
+            "Title": "Exact extraction from the filename provided",
             "Composer": "", 
             "Keywords": "Exactly 15 to 20 comma-separated keywords (mood, genre, instrumentation, editorial use). Keep all phrases to 3 words maximum.",
-            "Description": "A rough initial description of the track's narrative and utility."
+            "Description": "A single, cohesive, punchy paragraph of exactly 3 sentences describing the track's narrative and utility."
         }}
         Note: Leave 'Composer' blank.
         """
