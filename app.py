@@ -154,7 +154,7 @@ elif active_tab == tabs[2]:
                      sys_instr, prompt = st.session_state.engine.prompts.generate_track_description_prompt(
                          track['Title'], track.get('Track Description', ''), catalog
                      )
-                     new_desc = st.session_state.engine.call_gemini('gemini-3.1-pro-preview', sys_instr, prompt, api_key)
+                     new_desc = st.session_state.engine.call_gemini('gemini-3.1-pro', sys_instr, prompt, api_key)
                      track['Track Description'] = new_desc
                      updated.append(track)
                  st.session_state.app_data['tracks'] = updated
@@ -188,7 +188,7 @@ elif active_tab == tabs[3]:
             with st.spinner("Synthesizing..."):
                 descs = [t.get('Track Description', '') for t in st.session_state.app_data['tracks']]
                 sys_instr, prompt = st.session_state.engine.prompts.generate_album_description_prompt(descs, catalog)
-                res = st.session_state.engine.call_gemini('gemini-3.1-pro-preview', sys_instr, prompt, api_key)
+                res = st.session_state.engine.call_gemini('gemini-3.1-pro', sys_instr, prompt, api_key)
                 st.session_state.app_data['album_description'] = res
                 st.rerun()
                 
@@ -211,7 +211,7 @@ elif active_tab == tabs[4]:
         if st.button("Brainstorm Names"):
              with st.spinner("Generating 5 concepts..."):
                  sys_instr, prompt = st.session_state.engine.prompts.generate_album_name_prompt(st.session_state.app_data['album_description'], catalog)
-                 res = st.session_state.engine.call_gemini('gemini-1.5-flash', sys_instr, prompt, api_key)
+                 res = st.session_state.engine.call_gemini('gemini-3.1-flash', sys_instr, prompt, api_key)
                  st.session_state.app_data['album_name'] = res
                  st.rerun()
                  
@@ -249,7 +249,7 @@ elif active_tab == tabs[5]:
                      catalog,
                      selected_refs
                  )
-                 res = st.session_state.engine.call_gemini('gemini-3.1-pro-preview', sys_instr, prompt, api_key)
+                 res = st.session_state.engine.call_gemini('gemini-3.1-pro', sys_instr, prompt, api_key)
                  st.session_state.app_data['cover_art'] = res
                  st.rerun()
 
@@ -275,7 +275,7 @@ elif active_tab == tabs[6]:
                      st.session_state.app_data['album_description'],
                      catalog
                  )
-                 res = st.session_state.engine.call_gemini('gemini-3.1-pro-preview', sys_instr, prompt, api_key)
+                 res = st.session_state.engine.call_gemini('gemini-3.1-pro', sys_instr, prompt, api_key)
                  st.session_state.app_data['mailchimp_intro'] = res
                  st.rerun()
                  
