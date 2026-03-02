@@ -136,7 +136,10 @@ class IngestionEngine:
             raise RuntimeError(f"Gemini File Upload Failed for {file_path}")
             
         analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, file_path)
-        response = model.generate_content([analysis_prompt, audio_file])
+        response = model.generate_content(
+            [analysis_prompt, audio_file],
+            request_options={"timeout": 600}
+        )
         genai.delete_file(audio_file.name)
         
         text = response.text.strip()
