@@ -40,6 +40,26 @@ if not api_key:
     
 catalog = st.sidebar.selectbox("Active Catalog Persona", ["redCola", "SSC", "EPP"])
 
+# Dynamic Branding (Logo Display)
+logo_path = None
+if catalog == "redCola":
+    logo_path = "logo_redcola.png"
+elif catalog == "SSC":
+    logo_path = "logo_ssc.png"
+elif catalog == "EPP":
+    logo_path = "logo_epp.png"
+
+if logo_path:
+    # Look for it in the 01_VISUAL_REFERENCES block, or local path
+    try:
+        if os.path.exists(logo_path):
+            st.sidebar.image(logo_path, use_container_width=True)
+        else:
+            # Fallback placeholder showing what logo *should* be there
+            st.sidebar.info(f"[{logo_path} Placeholder]")
+    except Exception:
+        pass
+
 st.sidebar.markdown("---")
 st.sidebar.title("Waterfall Navigation")
 tabs = [
@@ -89,31 +109,39 @@ elif active_tab == tabs[1]:
     with col1:
         st.subheader("Action Zone: Ingestion")
         uploaded_files = st.file_uploader("Upload Master Audio", type=['mp3', 'wav'], accept_multiple_files=True)
-        if st.button("Run AI Analysis", disabled=not uploaded_files):
-            with st.spinner("Analyzing audio..."):
-                for uploaded_file in uploaded_files:
-                    temp_path = f"temp_{uploaded_file.name}"
-                    with open(temp_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    
-                    try:
-                        metadata = st.session_state.engine.analyze_audio_file(temp_path, catalog, api_key)
+        
+        @st.dialog("Confirm Catalog")
+        def run_analysis_dialog():
+            st.write(f"This will be processed for {catalog}, please confirm the album is being released on that catalog.")
+            if st.button("Confirm"):
+                with st.spinner("Analyzing audio..."):
+                    for uploaded_file in uploaded_files:
+                        temp_path = f"temp_{uploaded_file.name}"
+                        with open(temp_path, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
                         
-                        if metadata:
-                            clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -')
-                            st.session_state.app_data['tracks'].append({
-                                'Title': metadata.get("Title", clean_name),
-                                'Keywords': metadata.get("Keywords", ""),
-                                'Track Description': metadata.get("Description", "")
-                            })
-                    except Exception as e:
-                        import traceback
-                        st.session_state.ingestion_error = f"🚨 Analysis Failed for {uploaded_file.name}: {str(e)}\n\nTraceback: {traceback.format_exc()}"
-                    finally:
-                        if os.path.exists(temp_path): os.remove(temp_path)
-                        
-                st.success("Analysis Complete!")
-                st.rerun()
+                        try:
+                            # 1. Mandatory Model Selection enforced in Engine, but API keys passed here.
+                            metadata = st.session_state.engine.analyze_audio_file(temp_path, catalog, api_key)
+                            
+                            if metadata:
+                                clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -')
+                                st.session_state.app_data['tracks'].append({
+                                    'Title': metadata.get("Title", clean_name),
+                                    'Keywords': metadata.get("Keywords", ""),
+                                    'Track Description': metadata.get("Description", "")
+                                })
+                        except Exception as e:
+                            import traceback
+                            st.session_state.ingestion_error = f"🚨 Analysis Failed for {uploaded_file.name}: {str(e)}\n\nTraceback: {traceback.format_exc()}"
+                        finally:
+                            if os.path.exists(temp_path): os.remove(temp_path)
+                            
+                    st.success("Analysis Complete!")
+                    st.rerun()
+
+        if st.button("Analyze Audio with Gemini", disabled=not uploaded_files):
+            run_analysis_dialog()
 
     with col2:
         st.subheader("Data Editor")
@@ -211,7 +239,7 @@ elif active_tab == tabs[4]:
         if st.button("Brainstorm Names"):
              with st.spinner("Generating 5 concepts..."):
                  sys_instr, prompt = st.session_state.engine.prompts.generate_album_name_prompt(st.session_state.app_data['album_description'], catalog)
-                 res = st.session_state.engine.call_gemini('gemini-3-flash-preview', sys_instr, prompt, api_key)
+                 res = st.session_state.engine.call_gemini('gemini-3.1-pro-preview', sys_instr, prompt, api_key)
                  st.session_state.app_data['album_name'] = res
                  st.rerun()
                  
