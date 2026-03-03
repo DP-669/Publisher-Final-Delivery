@@ -107,7 +107,7 @@ class IngestionEngine:
                 text = banned_file.read_text(encoding='utf-8')
                 banned_from_catalog.update([line.strip().lower() for line in text.splitlines() if line.strip()])
 
-        global_bans = {"epic", "huge", "massive", "awesome", "badass", "piano", "bass", "synth", "strings", "percussion", "drums", "guitar", "brass", "vocal", "vocals"}
+        global_bans = {"epic", "huge", "massive", "awesome", "badass"}
         
         final_keywords = []
         for kw in corrected_keywords:
@@ -145,7 +145,9 @@ class IngestionEngine:
             
         analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, clean_title)
         
-        hard_constraints = "\n\nCRITICAL NEGATIVE CONSTRAINTS:\n- NO INSTRUMENTS ALLOWED IN KEYWORDS (e.g. no Piano, Synth, Bass, Percussion). Focus ONLY on Vibe, Emotion, and Sync Use-Case.\n"
+        hard_constraints = "\n\nCRITICAL NEGATIVE CONSTRAINTS:\n"
+        hard_constraints += "- KEYWORD RULE: Keywords should prioritize Vibe, Emotion, and Sync-Use. Do not simply list instruments as keywords (e.g., don't use 'Piano' as a standalone tag). However, if an instrument is the soul of the track, it can be part of a descriptive keyword (e.g., 'Solo Felt Piano').\n"
+        hard_constraints += "- DESCRIPTION INSTRUCTION: Track Descriptions SHOULD explicitly mention standout instrumentation or textures to provide a clear sonic picture for the music supervisor.\n"
         if catalog == "EPP":
             hard_constraints += "- CATALOG EPP STRICT RULE: NEVER use the words 'Trailer', 'Trailer Music', or 'Modern Trailer' anywhere in the description or keywords.\n"
         analysis_prompt += hard_constraints
