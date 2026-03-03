@@ -50,20 +50,27 @@ if not api_key:
 catalog = st.sidebar.selectbox("Active Catalog Persona", ["redCola", "SSC", "EPP"])
 
 # Dynamic Branding (Logo Display)
-logo_path = None
+logo_filename = None
 if catalog == "redCola":
-    logo_path = "logo_redcola.png"
+    logo_filename = "logo_redcola.png"
 elif catalog == "SSC":
-    logo_path = "logo_ssc.png"
+    logo_filename = "logo_ssc.png"
 elif catalog == "EPP":
-    logo_path = "logo_epp.png"
+    logo_filename = "logo_epp.png"
 
-if logo_path:
+if logo_filename:
     try:
-        if os.path.exists(logo_path):
-            st.sidebar.image(logo_path, use_container_width=True)
+        # Build absolute path to the script location
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_abs_path = os.path.join(base_dir, logo_filename)
+        fallback_abs_path = os.path.join(base_dir, "01_VISUAL_REFERENCES", catalog, logo_filename)
+        
+        if os.path.exists(logo_abs_path):
+            st.sidebar.image(logo_abs_path, use_container_width=True)
+        elif os.path.exists(fallback_abs_path):
+            st.sidebar.image(fallback_abs_path, use_container_width=True)
         else:
-            st.sidebar.info(f"[{logo_path} Placeholder]")
+            st.sidebar.info(f"[{logo_filename} Placeholder]")
     except Exception:
         pass
 
