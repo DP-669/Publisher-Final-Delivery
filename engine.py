@@ -120,6 +120,9 @@ class IngestionEngine:
                      final_kw = kw.title()
                 final_keywords.append(final_kw)
 
+        # Truncate to maximum 20 keywords
+        final_keywords = final_keywords[:20]
+
         return ", ".join(final_keywords)
 
     def analyze_audio_file(self, file_path: str, catalog: str, api_key: str) -> Optional[Dict]:

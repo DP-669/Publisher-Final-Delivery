@@ -69,7 +69,7 @@ class PromptEngine:
         STRICT RULES:
         1. CRITICAL: Do not invent, hallucinate, or generate original titles. The title must be an exact extraction from the raw filename provided ({filename}), stripping only track numbers and extensions (e.g., "01 " and ".mp3").
         2. Write a punchy, utility-driven Track Description of exactly 2 to 3 sentences. Do not write dialogue or conversational text. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
-        3. Sentence 1 must establish the genre vibe and list the core instrumentation (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
+        3. Sentence 1 must establish the genre vibe (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
         4. Sentence 2/3 must establish the emotional impact and specifically list 2 to 3 editorial use-cases (e.g., 'perfect for high-stakes action or edgy brand content.').
         5. CRITICAL WRITING STYLE: Write for extreme 'glanceability'. Limit yourself to a maximum of ONE strong adjective per noun. Rely on concrete musical terms and strong action verbs rather than emotional fluff. The editor must understand the track's utility in a 2-second scan.
         
@@ -81,7 +81,7 @@ class PromptEngine:
         {{
             "Title": "Exact extraction from the filename provided",
             "Composer": "", 
-            "Keywords": "Exactly 15 to 20 comma-separated keywords (mood, genre, instrumentation, editorial use). Keep all phrases to 3 words maximum.",
+            "Keywords": "Exactly 15 to 20 comma-separated keywords (mood, genre, editorial use). Keep all phrases to 3 words maximum.",
             "Description": "A punchy, utility-driven paragraph of exactly 2 to 3 sentences matching the tone of the examples."
         }}
         Note: Leave 'Composer' blank.
@@ -110,7 +110,7 @@ class PromptEngine:
         
         STRICT RULES:
         1. You must write EXACTLY 3 sentences.
-        2. Sentence 1: Hook/Ingestion (Must describe immediate feel/instrumentation).
+        2. Sentence 1: Hook/Ingestion (Must describe immediate feel/genre vibe).
         3. Sentence 2: Development (How the track builds or shifts).
         4. Sentence 3: Utility/Resolution (How it should be used in editing/sync).
         5. ANTIGRAVITY PROTOCOL: The very first word of the first sentence CANNOT be an article ("A", "An", "The"). Start immediately with an adjective or noun.
