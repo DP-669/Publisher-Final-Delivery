@@ -52,11 +52,11 @@ catalog = st.sidebar.selectbox("Active Catalog Persona", ["redCola", "SSC", "EPP
 # Dynamic Branding (Logo Display)
 logo_filename = None
 if catalog == "redCola":
-    logo_filename = "logo_redcola.png"
+    logo_filename = "redCola logo 200x2001934x751.jpg"
 elif catalog == "SSC":
-    logo_filename = "logo_ssc.png"
+    logo_filename = "SSC 200x200 8.27.08 PM.jpg"
 elif catalog == "EPP":
-    logo_filename = "logo_epp.png"
+    logo_filename = "EPP 200x200.jpg"
 
 if logo_filename:
     try:
