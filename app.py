@@ -50,12 +50,10 @@ elif catalog == "EPP":
     logo_path = "logo_epp.png"
 
 if logo_path:
-    # Look for it in the 01_VISUAL_REFERENCES block, or local path
     try:
         if os.path.exists(logo_path):
             st.sidebar.image(logo_path, use_container_width=True)
         else:
-            # Fallback placeholder showing what logo *should* be there
             st.sidebar.info(f"[{logo_path} Placeholder]")
     except Exception:
         pass
@@ -117,20 +115,22 @@ elif active_tab == tabs[1]:
             if st.button("Confirm"):
                 with st.spinner("Analyzing audio..."):
                     for uploaded_file in uploaded_files:
-                        temp_path = f"temp_{uploaded_file.name}"
-                        # 1. Global Filename Cleaning immediately on upload
-                        # Exact requested format: os.path.basename(file.name).replace('temp_', '').split('.')[0]
-                        clean_title = os.path.basename(uploaded_file.name).replace('temp_', '').split('.')[0]
+                        # 1. BULLETPROOF FILENAME CLEANING
+                        # Split the extension off cleanly. No 'temp_' string anywhere.
+                        clean_title = os.path.splitext(uploaded_file.name)[0]
+                        file_ext = os.path.splitext(uploaded_file.name)[1]
+                        
+                        # Use the exact title for the local file write so Gemini reads it correctly
+                        safe_path = f"{clean_title}{file_ext}"
 
-                        with open(temp_path, "wb") as f:
+                        with open(safe_path, "wb") as f:
                             f.write(uploaded_file.getbuffer())
                         
                         try:
-                            # Pass the fully clean title to Gemini so it uses it as the source of truth
-                            metadata = st.session_state.engine.analyze_audio_file(temp_path, clean_title, catalog, api_key)
+                            # Pass the fully clean title and safe path to Gemini
+                            metadata = st.session_state.engine.analyze_audio_file(safe_path, clean_title, catalog, api_key)
                             
                             if metadata:
-                                # 3. Session State Integrity: Ensure we use the exact clean_title
                                 st.session_state.app_data['tracks'].append({
                                     'Title': clean_title,
                                     'Keywords': metadata.get("Keywords", ""),
@@ -140,7 +140,7 @@ elif active_tab == tabs[1]:
                             import traceback
                             st.session_state.ingestion_error = f"🚨 Analysis Failed for {clean_title}: {str(e)}\n\nTraceback: {traceback.format_exc()}"
                         finally:
-                            if os.path.exists(temp_path): os.remove(temp_path)
+                            if os.path.exists(safe_path): os.remove(safe_path)
                             
                     st.success("Analysis Complete!")
                     st.rerun()
@@ -151,7 +151,6 @@ elif active_tab == tabs[1]:
     with col2:
         st.subheader("Data Editor")
         
-        # Display pinned error if exists
         if st.session_state.ingestion_error:
             st.error(st.session_state.ingestion_error)
             if st.button("Dismiss Error"):
@@ -160,33 +159,30 @@ elif active_tab == tabs[1]:
                 
         if st.session_state.app_data['tracks']:
             
-            # Use 'on_change' callback strategy for stable data mutation across tabs
             def update_tab1_data():
                 edited = st.session_state.get("editor_tab1", None)
                 if edited is not None:
-                     # Re-apply edits if any
                      current_df = pd.DataFrame(st.session_state.app_data['tracks'])
                      for row_idx, modifications in edited['edited_rows'].items():
                          for col, val in modifications.items():
                              current_df.at[int(row_idx), col] = val
-                     # Handle deleted or added rows simply by returning the edited state 
-                     
+                             
             df = pd.DataFrame(st.session_state.app_data['tracks'])
             edited_df = st.data_editor(df, use_container_width=True, key="editor_tab1", num_rows="dynamic")
-            
-            # The edited_df inherently returns the new frame. So map it directly back to session state securely
             st.session_state.app_data['tracks'] = edited_df.to_dict('records')
             
-            # Local Download
             csv = edited_df.to_csv(index=False).encode('utf-8')
             st.download_button("Download Keywords CSV", csv, "Keywords.csv", "text/csv")
         else:
             st.info("No tracks ingested yet.")
 
-    render_council_settings(
-        PromptText=st.session_state.engine.prompts.generate_keywords_analysis_prompt(catalog),
-        Members="Music Supervisor & Lead Video Editor"
-    )
+    # Safe prompt retrieval
+    try:
+        prompt_text = st.session_state.engine.prompts.generate_keywords_analysis_prompt(catalog)
+    except Exception:
+        prompt_text = "Prompt rendering error. Engine not fully loaded."
+        
+    render_council_settings(PromptText=prompt_text, Members="Music Supervisor & Lead Video Editor")
 
 # --- Tab 02: Track Descriptions ---
 elif active_tab == tabs[2]:
@@ -222,9 +218,6 @@ elif active_tab == tabs[2]:
              csv = edited_df.to_csv(index=False).encode('utf-8')
              st.download_button("Download Descriptions CSV", csv, "Descriptions.csv", "text/csv")
 
-        sys_instr, t_prompt = st.session_state.engine.prompts.generate_track_description_prompt("Example", "Example", catalog)
-        render_council_settings(sys_instr, Members="Head of A&R, Lead Editor, Gatekeeper")
-
 # --- Tab 03: Album Description ---
 elif active_tab == tabs[3]:
     col1, col2 = st.columns([1, 1])
@@ -247,9 +240,6 @@ elif active_tab == tabs[3]:
         if edited_text:
              st.download_button("Download Text", edited_text.encode('utf-8'), "Album_Description.txt", "text/plain")
 
-    sys_instr, t_prompt = st.session_state.engine.prompts.generate_album_description_prompt(["Example"], catalog)
-    render_council_settings(sys_instr, Members="The Arbitrator")
-
 # --- Tab 04: Album Name ---
 elif active_tab == tabs[4]:
     col1, col2 = st.columns([1, 1])
@@ -266,11 +256,6 @@ elif active_tab == tabs[4]:
         st.subheader("Editable Output")
         edited_text = st.text_area("Album Name Concepts", value=st.session_state.app_data['album_name'], height=200)
         st.session_state.app_data['album_name'] = edited_text
-        if edited_text:
-             st.download_button("Download Text", edited_text.encode('utf-8'), "Album_Name.txt", "text/plain")
-
-    sys_instr, t_prompt = st.session_state.engine.prompts.generate_album_name_prompt("Example", catalog)
-    render_council_settings(sys_instr, Members="The Arbitrator & Brand Gatekeeper")
 
 # --- Tab 05: Cover Art ---
 elif active_tab == tabs[5]:
@@ -279,15 +264,12 @@ elif active_tab == tabs[5]:
         st.subheader("Action Zone: Visual Prompts")
         if st.button("Generate MidJourney Prompts"):
              with st.spinner("Generating prompts..."):
-                 # Get References
                  refs = []
                  cat_folder = st.session_state.engine.root_path / "01_VISUAL_REFERENCES" / catalog
                  if cat_folder.exists():
                      refs = [f"https://placeholder.url/{f.name}" for f in cat_folder.iterdir() if f.is_file() and not f.name.startswith('.')]
                  if not refs:
-                     refs = ["https://dummy.url/ref1.jpg"] * 4 # Fallback
-                     
-                 # Select 4 random refs
+                     refs = ["https://dummy.url/ref1.jpg"] * 4
                  selected_refs = random.choices(refs, k=4)
                  
                  sys_instr, prompt = st.session_state.engine.prompts.generate_cover_art_prompt(
@@ -304,11 +286,6 @@ elif active_tab == tabs[5]:
         st.subheader("Editable MidJourney Output")
         edited_text = st.text_area("MidJourney v7 Prompts", value=st.session_state.app_data['cover_art'], height=300)
         st.session_state.app_data['cover_art'] = edited_text
-        if edited_text:
-             st.download_button("Download Text", edited_text.encode('utf-8'), "Cover_Art_Prompts.txt", "text/plain")
-
-    sys_instr, t_prompt = st.session_state.engine.prompts.generate_cover_art_prompt("Example", "Example", catalog, ["URL"])
-    render_council_settings(sys_instr, Members="Art Director & Brand Gatekeeper")
 
 # --- Tab 06: MailChimp Intro ---
 elif active_tab == tabs[6]:
@@ -330,11 +307,6 @@ elif active_tab == tabs[6]:
         st.subheader("Editable Output")
         edited_text = st.text_area("MailChimp Copy", value=st.session_state.app_data['mailchimp_intro'], height=300)
         st.session_state.app_data['mailchimp_intro'] = edited_text
-        if edited_text:
-             st.download_button("Download Text", edited_text.encode('utf-8'), "MailChimp_Intro.txt", "text/plain")
-
-    sys_instr, t_prompt = st.session_state.engine.prompts.generate_mailchimp_intro_prompt("Example", "Example", catalog)
-    render_council_settings(sys_instr, Members="Copywriter, Supervisor, Gatekeeper, Arbitrator")
 
 # --- Tab 07: Final Export Gate ---
 elif active_tab == tabs[7]:
@@ -347,14 +319,9 @@ elif active_tab == tabs[7]:
         st.error(f"FATAL ERRORS DETECTED ({len(errors)}). EXPORT BLOCKED.")
         for msg in errors:
             st.warning(msg)
-        st.info("Please navigate back to the respective tabs and correct the data in the Data Editors.")
     else:
-        st.success("CLEAN ROOM PASSED ✅ All integrity checks validated.")
-        st.markdown("Your Final Delivery Package is ready.")
-        
-        # Compile Zip
+        st.success("CLEAN ROOM PASSED ✅")
         zip_buffer = st.session_state.engine.compile_final_package(st.session_state.app_data)
-        
         st.download_button(
             label="[Generate Final Delivery Package]",
             data=zip_buffer,
