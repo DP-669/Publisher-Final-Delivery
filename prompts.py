@@ -113,11 +113,14 @@ class PromptEngine:
         Catalog Context: {catalog}.
         
         STRICT RULES:
-        1. You must write EXACTLY 3 sentences.
-        2. Sentence 1: Hook/Ingestion (Must describe immediate feel/genre vibe).
-        3. Sentence 2: Development (How the track builds or shifts).
-        4. Sentence 3: Utility/Resolution (How it should be used in editing/sync).
+        1. STRUCTURE: You must write EXACTLY 2 or 3 punchy sentences.
+        2. ECONOMY OF LANGUAGE: Avoid flowery adjectives like 'relentless momentum' or 'unleashing explosive energy'. Rely on strong nouns and concrete musical terms.
+        3. THE 'GLANCE-ABLE' EDIT: Never say 'This track provides maximum utility for...' or 'Perfectly suited for...'. Instead, use direct utility phrasing like 'Ideal for...' or 'Perfect for...'.
+        4. NUANCE CHECK: You MUST mention standout instrumentation or organic textures, but keep them tightly integrated into the vibe description (e.g., 'driven by booming sub-bass and distorted brass' instead of 'The track features booming sub-bass.').
         5. ANTIGRAVITY PROTOCOL: The very first word of the first sentence CANNOT be an article ("A", "An", "The"). Start immediately with an adjective or noun.
+        
+        EXAMPLE TARGET STYLE:
+        "Gritty trap-hip hop fusion driven by booming sub-bass and distorted brass. Features a ticking breakdown before a high-energy drop. Ideal for sports highlights, car promos, and streetwear campaigns."
         """
         
         task_prompt = f"""
