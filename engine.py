@@ -134,12 +134,14 @@ class IngestionEngine:
         model = genai.GenerativeModel('gemini-3.1-pro-preview')
         
         audio_file = genai.upload_file(path=file_path)
+        
+        # Poll until the file is ACTIVE and ready to be used by the model
         while audio_file.state.name == "PROCESSING":
-            time.sleep(1)
+            time.sleep(2)
             audio_file = genai.get_file(audio_file.name)
             
-        if audio_file.state.name == "FAILED": 
-            raise RuntimeError(f"Gemini File Upload Failed for {file_path}")
+        if audio_file.state.name != "ACTIVE": 
+            raise RuntimeError(f"Gemini File Upload Failed or is in an invalid state '{audio_file.state.name}' for {file_path}")
             
         analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, file_path)
 
@@ -152,11 +154,14 @@ class IngestionEngine:
             timeout=600.0,
         )
 
-        response = retry_policy(model.generate_content)(
-            [analysis_prompt, audio_file],
-            request_options={"timeout": 600}
-        )
-        genai.delete_file(audio_file.name)
+        try:
+            response = retry_policy(model.generate_content)(
+                [analysis_prompt, audio_file],
+                request_options={"timeout": 600}
+            )
+        finally:
+            # Cleanup File API from Google storage once processed
+            genai.delete_file(audio_file.name)
         
         text = response.text.strip()
         if text.startswith("```json"): text = text[7:]
