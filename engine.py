@@ -128,7 +128,7 @@ class IngestionEngine:
 
         return ", ".join(final_keywords)
 
-    def analyze_audio_file(self, file_path: str, catalog: str, api_key: str) -> Optional[Dict]:
+    def analyze_audio_file(self, file_path: str, clean_title: str, catalog: str, api_key: str) -> Optional[Dict]:
         """Analyzes an audio file using Gemini to extract metadata."""
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-3.1-pro-preview')
@@ -143,7 +143,7 @@ class IngestionEngine:
         if audio_file.state.name != "ACTIVE": 
             raise RuntimeError(f"Gemini File Upload Failed or is in an invalid state '{audio_file.state.name}' for {file_path}")
             
-        analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, file_path)
+        analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, clean_title)
 
         # Retry logic specifically for 500 / 503 from backend audio transcription failures
         retry_policy = retry.Retry(

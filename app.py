@@ -118,26 +118,27 @@ elif active_tab == tabs[1]:
                 with st.spinner("Analyzing audio..."):
                     for uploaded_file in uploaded_files:
                         temp_path = f"temp_{uploaded_file.name}"
+                        # 1. Global Filename Cleaning immediately on upload
+                        # Exact requested format: os.path.basename(file.name).replace('temp_', '').split('.')[0]
+                        clean_title = os.path.basename(uploaded_file.name).replace('temp_', '').split('.')[0]
+
                         with open(temp_path, "wb") as f:
                             f.write(uploaded_file.getbuffer())
                         
                         try:
-                            # 1. Mandatory Model Selection enforced in Engine, but API keys passed here.
-                            metadata = st.session_state.engine.analyze_audio_file(temp_path, catalog, api_key)
+                            # Pass the fully clean title to Gemini so it uses it as the source of truth
+                            metadata = st.session_state.engine.analyze_audio_file(temp_path, clean_title, catalog, api_key)
                             
                             if metadata:
-                                # Start with pristine filename, stripping only the leading digits and dashes
-                                clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -_')
-                                
-                                # Make sure the generated description maps correctly to 'Track Description' (which was 'Description' in prompt)
+                                # 3. Session State Integrity: Ensure we use the exact clean_title
                                 st.session_state.app_data['tracks'].append({
-                                    'Title': metadata.get("Title", clean_name),
+                                    'Title': clean_title,
                                     'Keywords': metadata.get("Keywords", ""),
                                     'Track Description': metadata.get("Description", "")
                                 })
                         except Exception as e:
                             import traceback
-                            st.session_state.ingestion_error = f"🚨 Analysis Failed for {uploaded_file.name}: {str(e)}\n\nTraceback: {traceback.format_exc()}"
+                            st.session_state.ingestion_error = f"🚨 Analysis Failed for {clean_title}: {str(e)}\n\nTraceback: {traceback.format_exc()}"
                         finally:
                             if os.path.exists(temp_path): os.remove(temp_path)
                             

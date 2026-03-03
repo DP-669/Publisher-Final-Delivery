@@ -51,7 +51,7 @@ class PromptEngine:
         }
 
     # --- TAB 01 Prompts ---
-    def generate_keywords_analysis_prompt(self, catalog: str, filename: str = "Unknown Track") -> str:
+    def generate_keywords_analysis_prompt(self, catalog: str, clean_title: str) -> str:
         """
         Generates the system instruction for audio analysis (Keywords/Ingestion).
         Consults Music Supervisor and Lead Video Editor.
@@ -67,12 +67,15 @@ class PromptEngine:
         Analyze the provided audio track for the {catalog} catalog. Provide a highly detailed, human-like analysis in JSON format.
         
         STRICT RULES:
-        1. CRITICAL: Do not invent, hallucinate, or generate original titles. The title must be an exact extraction from the raw filename provided ({filename}), stripping only track numbers and extensions (e.g., "01 " and ".mp3").
+        1. CRITICAL: The exact Title of this track is '{clean_title}'. You must use this exactly as provided without modification.
         2. Write a punchy, utility-driven Track Description of exactly 2 to 3 sentences. Do not write dialogue or conversational text. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
         3. Sentence 1 must establish the genre vibe (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
         4. Sentence 2/3 must establish the emotional impact and specifically list 2 to 3 editorial use-cases (e.g., 'perfect for high-stakes action or edgy brand content.').
         5. CRITICAL WRITING STYLE: Write for extreme 'glanceability'. Limit yourself to a maximum of ONE strong adjective per noun. Rely on concrete musical terms and strong action verbs rather than emotional fluff. The editor must understand the track's utility in a 2-second scan.
         {f"6. EPP BRAND CONSTRAINT: You are writing for 'Ekonomic Propaganda' (Sophisticated Production Music for Film/TV/Advertising). You are STRICTLY FORBIDDEN from using the word 'Trailer', 'Trailer Music', 'Modern Trailer', or related theatrical trailer phrasing anywhere in your output." if catalog == "EPP" else ""}
+        
+        NEGATIVE CONSTRAINTS:
+        NO INSTRUMENTS ALLOWED IN KEYWORDS: Do not include words like Piano, Percussion, Bass, Synth, or Strings. Keywords must focus ONLY on Vibe, Emotion, and Commercial Use-Case (e.g., "Tense Momentum," "High-Stakes Sports," "Urban Grit").
         
         FEW-SHOT CONTRAST EXAMPLES (DO THIS / NOT THAT):
         BAD EXAMPLE (Too much fluff): "A hard-hitting, aggressive electronic beat built on punchy drum grooves, booming sub-bass, and dark synth motifs. This track establishes a tense, adrenaline-fueled atmosphere that drives relentless forward momentum, perfect for gritty action promos."
@@ -80,7 +83,7 @@ class PromptEngine:
         
         Required JSON Structure:
         {{
-            "Title": "Exact extraction from the filename provided",
+            "Title": "{clean_title}",
             "Composer": "", 
             "Keywords": "Exactly 15 to 20 comma-separated keywords (mood, genre, editorial use). Keep all phrases to 3 words maximum.",
             "Description": "A punchy, utility-driven paragraph of exactly 2 to 3 sentences matching the tone of the examples."
