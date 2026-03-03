@@ -72,6 +72,7 @@ class PromptEngine:
         3. Sentence 1 must establish the genre vibe (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
         4. Sentence 2/3 must establish the emotional impact and specifically list 2 to 3 editorial use-cases (e.g., 'perfect for high-stakes action or edgy brand content.').
         5. CRITICAL WRITING STYLE: Write for extreme 'glanceability'. Limit yourself to a maximum of ONE strong adjective per noun. Rely on concrete musical terms and strong action verbs rather than emotional fluff. The editor must understand the track's utility in a 2-second scan.
+        {f"6. EPP BRAND CONSTRAINT: You are writing for 'Ekonomic Propaganda' (Sophisticated Production Music for Film/TV/Advertising). You are STRICTLY FORBIDDEN from using the word 'Trailer', 'Trailer Music', 'Modern Trailer', or related theatrical trailer phrasing anywhere in your output." if catalog == "EPP" else ""}
         
         FEW-SHOT CONTRAST EXAMPLES (DO THIS / NOT THAT):
         BAD EXAMPLE (Too much fluff): "A hard-hitting, aggressive electronic beat built on punchy drum grooves, booming sub-bass, and dark synth motifs. This track establishes a tense, adrenaline-fueled atmosphere that drives relentless forward momentum, perfect for gritty action promos."

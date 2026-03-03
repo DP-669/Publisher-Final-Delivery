@@ -82,6 +82,13 @@ def render_council_settings(PromptText="No prompt used.", Members="General Counc
         st.markdown(f"**Active Personas**: {Members}")
         st.code(PromptText, language="text")
 
+    if st.sidebar.button("Reset All Data", type="primary"):
+        st.session_state.app_data = {
+            'tracks': [], 'album_description': '', 'album_name': '',
+            'cover_art': '', 'mailchimp_intro': ''
+        }
+        st.sidebar.success("Session Cleared.")
+
 # --- Tab 00: The Flight Deck ---
 if active_tab == tabs[0]:
     st.write("### Welcome to the Publisher Final Delivery App")
@@ -95,12 +102,6 @@ if active_tab == tabs[0]:
     - Edit outputs directly in the text boxes or data editors provided.
     - Export the final package at Tab 07, assuming the data passes the Clean Room validation.
     """)
-    if st.button("Clear All Session Data", type="primary"):
-        st.session_state.app_data = {
-            'tracks': [], 'album_description': '', 'album_name': '',
-            'cover_art': '', 'mailchimp_intro': ''
-        }
-        st.success("Session Cleared.")
 
 # --- Tab 01: Keywords & Ingestion ---
 elif active_tab == tabs[1]:
@@ -125,7 +126,10 @@ elif active_tab == tabs[1]:
                             metadata = st.session_state.engine.analyze_audio_file(temp_path, catalog, api_key)
                             
                             if metadata:
-                                clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -')
+                                # Start with pristine filename, stripping only the leading digits and dashes
+                                clean_name = os.path.splitext(uploaded_file.name)[0].lstrip('0123456789 -_')
+                                
+                                # Make sure the generated description maps correctly to 'Track Description' (which was 'Description' in prompt)
                                 st.session_state.app_data['tracks'].append({
                                     'Title': metadata.get("Title", clean_name),
                                     'Keywords': metadata.get("Keywords", ""),
@@ -154,8 +158,22 @@ elif active_tab == tabs[1]:
                 st.rerun()
                 
         if st.session_state.app_data['tracks']:
+            
+            # Use 'on_change' callback strategy for stable data mutation across tabs
+            def update_tab1_data():
+                edited = st.session_state.get("editor_tab1", None)
+                if edited is not None:
+                     # Re-apply edits if any
+                     current_df = pd.DataFrame(st.session_state.app_data['tracks'])
+                     for row_idx, modifications in edited['edited_rows'].items():
+                         for col, val in modifications.items():
+                             current_df.at[int(row_idx), col] = val
+                     # Handle deleted or added rows simply by returning the edited state 
+                     
             df = pd.DataFrame(st.session_state.app_data['tracks'])
             edited_df = st.data_editor(df, use_container_width=True, key="editor_tab1", num_rows="dynamic")
+            
+            # The edited_df inherently returns the new frame. So map it directly back to session state securely
             st.session_state.app_data['tracks'] = edited_df.to_dict('records')
             
             # Local Download
