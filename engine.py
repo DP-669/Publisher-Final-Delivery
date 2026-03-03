@@ -83,7 +83,7 @@ class IngestionEngine:
         kw_list = [k.strip() for k in re.split(r'[,;]', keywords_raw) if k.strip()]
         
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3-flash-preview') 
+        model = genai.GenerativeModel('gemini-3.1-pro-preview')
         
         corrected_keywords = []
         for kw in kw_list:
@@ -107,7 +107,7 @@ class IngestionEngine:
                 text = banned_file.read_text(encoding='utf-8')
                 banned_from_catalog.update([line.strip().lower() for line in text.splitlines() if line.strip()])
 
-        global_bans = {"epic", "huge", "massive", "awesome", "badass"}
+        global_bans = {"epic", "huge", "massive", "awesome", "badass", "piano", "bass", "synth", "strings", "percussion", "drums", "guitar", "brass", "vocal", "vocals"}
         
         final_keywords = []
         for kw in corrected_keywords:
@@ -144,6 +144,11 @@ class IngestionEngine:
             raise RuntimeError(f"Gemini File Upload Failed or is in an invalid state '{audio_file.state.name}' for {file_path}")
             
         analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, clean_title)
+        
+        hard_constraints = "\n\nCRITICAL NEGATIVE CONSTRAINTS:\n- NO INSTRUMENTS ALLOWED IN KEYWORDS (e.g. no Piano, Synth, Bass, Percussion). Focus ONLY on Vibe, Emotion, and Sync Use-Case.\n"
+        if catalog == "EPP":
+            hard_constraints += "- CATALOG EPP STRICT RULE: NEVER use the words 'Trailer', 'Trailer Music', or 'Modern Trailer' anywhere in the description or keywords.\n"
+        analysis_prompt += hard_constraints
 
         # Retry logic specifically for 500 / 503 from backend audio transcription failures
         retry_policy = retry.Retry(
