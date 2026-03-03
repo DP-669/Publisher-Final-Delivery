@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import List, Optional, Dict, Tuple
 from prompts import PromptEngine
 
+from google.api_core import retry
+from google.api_core.exceptions import InternalServerError, ServiceUnavailable
+
 DEFAULT_ROOT_PATH = Path(".")
 
 class IngestionEngine:
@@ -139,7 +142,17 @@ class IngestionEngine:
             raise RuntimeError(f"Gemini File Upload Failed for {file_path}")
             
         analysis_prompt = self.prompts.generate_keywords_analysis_prompt(catalog, file_path)
-        response = model.generate_content(
+
+        # Retry logic specifically for 500 / 503 from backend audio transcription failures
+        retry_policy = retry.Retry(
+            predicate=retry.if_exception_type(InternalServerError, ServiceUnavailable),
+            initial=2.0,
+            maximum=60.0,
+            multiplier=2.0,
+            timeout=600.0,
+        )
+
+        response = retry_policy(model.generate_content)(
             [analysis_prompt, audio_file],
             request_options={"timeout": 600}
         )
