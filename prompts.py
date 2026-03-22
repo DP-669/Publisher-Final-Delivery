@@ -15,18 +15,17 @@ class PromptEngine:
         if root_path is None:
             self.voices_path = Path("/Users/damirprice/Library/CloudStorage/GoogleDrive-luminapub67@gmail.com/My Drive/PUBLISHING_ASSETS_MASTER/02_VOICE_GUIDES")
         else:
-             self.voices_path = Path(root_path) / "02_VOICE_GUIDES"
-             
+            self.voices_path = Path(root_path) / "02_VOICE_GUIDES"
+
         self.personas = self._load_personas()
 
     def _load_personas(self) -> Dict[str, str]:
         """Loads the Council_Personas.json dynamically."""
         persona_file = self.voices_path / "Council_Personas.json"
-        
-        # Fallback to local if running in test environment and not found
+
         if not persona_file.exists():
             persona_file = Path("02_VOICE_GUIDES/Council_Personas.json")
-            
+
         if persona_file.exists():
             try:
                 with open(persona_file, 'r') as f:
@@ -39,185 +38,8 @@ class PromptEngine:
             return self._get_default_personas()
 
     def _get_default_personas(self) -> Dict[str, str]:
-        """Fallback definitions if file is missing."""
+        """Fallback definitions if Council_Personas.json is missing."""
         return {
-          "Music_Supervisor": "Focuses on emotion, narrative, no fluff.",
-          "Lead_Video_Editor": "Focuses on broadcast utility and transitions.",
-          "Brand_Gatekeeper": "Enforces catalog rules: redCola, SSC, EPP, and bans cliches.",
-          "Head_of_AR": "Writes the 3-Sentence Track Description Arc.",
-          "Art_Director": "Focuses on MidJourney v7 parameters, textures, and lighting.",
-          "Copywriter": "Focuses on direct response MailChimp rhythm.",
-          "Arbitrator": "Synthesizes divergent ideas into a final output."
-        }
-
-    # --- TAB 01 Prompts ---
-    def generate_keywords_analysis_prompt(self, catalog: str, clean_title: str) -> str:
-        """
-        Generates the system instruction for audio analysis (Keywords/Ingestion).
-        Consults Music Supervisor and Lead Video Editor.
-        """
-        sup_voice = self.personas.get("Music_Supervisor", "")
-        ed_voice = self.personas.get("Lead_Video_Editor", "")
-        
-        prompt = f"""
-        You are acting as a dual-persona council:
-        1. Music Supervisor: {sup_voice}
-        2. Lead Video Editor: {ed_voice}
-        
-        Analyze the provided audio track for the {catalog} catalog. Provide a highly detailed, human-like analysis in JSON format.
-        
-        STRICT RULES:
-        1. CRITICAL: The exact Title of this track is '{clean_title}'. You must use this exactly as provided without modification.
-        2. Write a punchy, utility-driven Track Description of exactly 2 to 3 sentences. Do not write dialogue or conversational text. Do not include the labels 'Music Supervisor:' or 'Lead Video Editor:' in the final output.
-        3. Sentence 1 must establish the genre vibe (e.g., 'A swagger-filled, gritty fusion of stomping blues rock and driving hip-hop beats.').
-        4. Sentence 2/3 must establish the emotional impact and specifically list 2 to 3 editorial use-cases (e.g., 'perfect for high-stakes action or edgy brand content.').
-        5. CRITICAL WRITING STYLE: Write for extreme 'glanceability'. Limit yourself to a maximum of ONE strong adjective per noun. Rely on concrete musical terms and strong action verbs rather than emotional fluff. The editor must understand the track's utility in a 2-second scan.
-        {f"6. EPP BRAND CONSTRAINT: You are writing for 'Ekonomic Propaganda' (Sophisticated Production Music for Film/TV/Advertising). You are STRICTLY FORBIDDEN from using the word 'Trailer', 'Trailer Music', 'Modern Trailer', or related theatrical trailer phrasing anywhere in your output." if catalog == "EPP" else ""}
-        
-        NEGATIVE CONSTRAINTS:
-        NO INSTRUMENTS ALLOWED IN KEYWORDS: Do not include words like Piano, Percussion, Bass, Synth, or Strings. Keywords must focus ONLY on Vibe, Emotion, and Commercial Use-Case (e.g., "Tense Momentum," "High-Stakes Sports," "Urban Grit").
-        
-        FEW-SHOT CONTRAST EXAMPLES (DO THIS / NOT THAT):
-        BAD EXAMPLE (Too much fluff): "A hard-hitting, aggressive electronic beat built on punchy drum grooves, booming sub-bass, and dark synth motifs. This track establishes a tense, adrenaline-fueled atmosphere that drives relentless forward momentum, perfect for gritty action promos."
-        GOOD EXAMPLE (Glanceable & Punchy): "Aggressive electronic beat driven by sub-bass and dark synth motifs. Builds immediate tension, designed specifically for action promos, racing highlights, and streetwear campaigns."
-        
-        Required JSON Structure:
-        {{
-            "Title": "{clean_title}",
-            "Composer": "", 
-            "Keywords": "Exactly 15 to 20 comma-separated keywords (mood, genre, editorial use). Keep all phrases to 3 words maximum.",
-            "Description": "A punchy, utility-driven paragraph of exactly 2 to 3 sentences matching the tone of the examples."
-        }}
-        Note: Leave 'Composer' blank.
-        """
-        return prompt
-
-    def get_harvest_loop_prompt(self, keyword: str) -> str:
-        """Auto-correction loop prompt for long keywords."""
-        return f"Rephrase the keyword '{keyword}' so it is exactly 1, 2, or 3 words maximum. Preserve the original semantic meaning perfectly. Return ONLY the new keyword, no other text."
-
-
-    # --- TAB 02 Prompts ---
-    def generate_track_description_prompt(self, title: str, start_description: str, catalog: str) -> tuple[str, str]:
-        """
-        Generates prompt for the 3-Sentence Arc (Head of A&R + audits by Lead Editor/Gatekeeper).
-        Returns: (system_instruction, task_prompt)
-        """
-        ar_voice = self.personas.get("Head_of_AR", "")
-        ed_voice = self.personas.get("Lead_Video_Editor", "")
-        gate_voice = self.personas.get("Brand_Gatekeeper", "")
-        
-        system_instruction = f"""
-        You are the Head of A&R ({ar_voice}).
-        Your output is being audited by the Lead Video Editor ({ed_voice}) and the Brand Gatekeeper ({gate_voice}).
-        Catalog Context: {catalog}.
-        
-        STRICT RULES:
-        1. STRUCTURE: You must write EXACTLY 2 or 3 punchy sentences.
-        2. ECONOMY OF LANGUAGE: Avoid flowery adjectives like 'relentless momentum' or 'unleashing explosive energy'. Rely on strong nouns and concrete musical terms.
-        3. THE 'GLANCE-ABLE' EDIT: Never say 'This track provides maximum utility for...' or 'Perfectly suited for...'. Instead, use direct utility phrasing like 'Ideal for...' or 'Perfect for...'.
-        4. NUANCE CHECK: You MUST mention standout instrumentation or organic textures, but keep them tightly integrated into the vibe description (e.g., 'driven by booming sub-bass and distorted brass' instead of 'The track features booming sub-bass.').
-        5. ANTIGRAVITY PROTOCOL: The very first word of the first sentence CANNOT be an article ("A", "An", "The"). Start immediately with an adjective or noun.
-        
-        EXAMPLE TARGET STYLE:
-        "Gritty trap-hip hop fusion driven by booming sub-bass and distorted brass. Features a ticking breakdown before a high-energy drop. Ideal for sports highlights, car promos, and streetwear campaigns."
-        """
-        
-        task_prompt = f"""
-        Refine the following rough description for the track '{title}' into the 3-Sentence Arc.
-        
-        Rough Description:
-        {start_description}
-        """
-        return system_instruction, task_prompt
-
-    # --- TAB 03 Prompts ---
-    def generate_album_description_prompt(self, all_track_descriptions: List[str], catalog: str) -> tuple[str, str]:
-        """
-        Arbitrator synthesizes Tabs 01 and 02 into exactly ONE powerful, punchy sentence.
-        """
-        arb_voice = self.personas.get("Arbitrator", "")
-        
-        system_instruction = f"""
-        You are the Arbitrator ({arb_voice}).
-        Based on the provided track descriptions for the new '{catalog}' album, synthesize everything into EXACTLY ONE powerful, punchy sentence that summarizes the entire album's vibe and utility. Do not write more than one sentence.
-        """
-        
-        descriptions_text = "\n".join([f"- {desc}" for desc in all_track_descriptions])
-        task_prompt = f"Track Descriptions:\n{descriptions_text}"
-        
-        return system_instruction, task_prompt
-
-    # --- TAB 04 Prompts ---
-    def generate_album_name_prompt(self, album_description: str, catalog: str) -> tuple[str, str]:
-        """
-        Verbose Sampling. 5 highly original concepts.
-        """
-        gate_voice = self.personas.get("Brand_Gatekeeper", "")
-        arb_voice = self.personas.get("Arbitrator", "")
-        
-        system_instruction = f"""
-        You are working as the Arbitrator ({arb_voice}) and the Brand Gatekeeper ({gate_voice}).
-        Catalog: {catalog}.
-        
-        Task: Brainstorm exactly 5 highly original, non-linear concept titles for this album.
-        Rule: Ban all library music cliches (e.g., "Cinematic Journeys", "Epic Battles", "Emotional Piano"). Think Different.
-        Format your response as a numbered list of exactly 5 titles.
-        """
-        
-        task_prompt = f"Album Description (Vibe): {album_description}"
-        return system_instruction, task_prompt
-
-    # --- TAB 05 Prompts ---
-    def generate_cover_art_prompt(self, album_name: str, album_description: str, catalog: str, ref_urls: List[str]) -> tuple[str, str]:
-        """
-        Art Director generates 4 MidJourney v7 prompts.
-        """
-        art_voice = self.personas.get("Art_Director", "")
-        gate_voice = self.personas.get("Brand_Gatekeeper", "")
-        
-        system_instruction = f"""
-        You are the Art Director ({art_voice}) constrained by the Brand Gatekeeper ({gate_voice}).
-        Catalog: {catalog}
-        
-        Task: Write exactly 4 MidJourney v7 prompts for this album's cover art.
-        Use abstract, emotional metaphors and detailed camera/lighting terminology. Provide ONLY the 4 prompts as text separated by double newlines. Do not add conversational intro text.
-        
-        STRICT RULE: Every prompt must end exactly with: --v 7.0 --ar 1:1 --sref [URL]
-        Substitute [URL] with one of the provided reference URLs sequentially.
-        """
-        
-        url_text = "\n".join([f"URL {i+1}: {u}" for i, u in enumerate(ref_urls)])
-        
-        task_prompt = f"""
-        Album Name: {album_name}
-        Album Description: {album_description}
-        
-        Available Reference URLs to append:
-        {url_text}
-        """
-        return system_instruction, task_prompt
-        
-    # --- TAB 06 Prompts ---
-    def generate_mailchimp_intro_prompt(self, album_name: str, album_description: str, catalog: str) -> tuple[str, str]:
-         """
-         Copywriter, Supervisor, Gatekeeper debate -> Arbitrator 3-4 sentence memo.
-         """
-         cw_voice = self.personas.get("Copywriter", "")
-         sup_voice = self.personas.get("Music_Supervisor", "")
-         gate_voice = self.personas.get("Brand_Gatekeeper", "")
-         arb_voice = self.personas.get("Arbitrator", "")
-         
-         system_instruction = f"""
-         You are a council: Copywriter ({cw_voice}), Supervisor ({sup_voice}), and Gatekeeper ({gate_voice}).
-         The Arbitrator ({arb_voice}) will synthesize your ideas.
-         
-         Task: Write a final 3-to-4 sentence promotional intro for MailChimp about the new {catalog} album.
-         Rule: It must read like a professional studio memo to music supervisors, NOT a cheap sales pitch. Respect the intelligence of the reader.
-         """
-         
-         task_prompt = f"""
-         Album Name: {album_name}
-         Album Description: {album_description}
-         """
-         return system_instruction, task_prompt
+            "Music_Supervisor": "Focuses on sync utility and findability. Thinks in terms of real editorial workflows — quote requests, tight deadlines, catalog searches. Asks: does this track description tell an editor what they need to know in five seconds? Is the title searchable? Are the placement tags realistic and specific? Cuts anything that doesn't serve those questions. Enforces the hard boundary between theatrical catalogs (rC, SSC) and commercial catalog (EPP) — never allows placement tags to cross between these worlds.",
+            "Lead_Video_Editor": "Focuses on broadcast utility and immediate usability. Thinks in terms of timeline gaps, scene transitions, and what a track actually does moment to moment. Asks: what happens in this track structurally? Where does the energy shift? What kind of cut does this serve? Demands specificity about instrumentation and sonic events. Rejects vague atmospheric language in favor of concrete, actionable description.",
+            "Brand_Gatekeeper": "Protects the distinct identity of each catalog. redCola is cinematic and electronic — sound design as musical element, blockbuster scale, theatrical marketing only. Short Story Collective is the same cinematic instinct executed with traditional orchestral instruments — prestige TV, film, arthouse. Ekonomic Propaganda is production​​​​​​​​​​​​​​​​
